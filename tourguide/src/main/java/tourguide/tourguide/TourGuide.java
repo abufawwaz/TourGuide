@@ -5,15 +5,16 @@ import android.animation.AnimatorSet;
 import android.animation.ObjectAnimator;
 import android.animation.ValueAnimator;
 import android.app.Activity;
+import android.content.Context;
 import android.graphics.Color;
 import android.graphics.Point;
 import android.util.Log;
-import android.view.Display;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
+import android.view.Window;
 import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.TextView;
@@ -39,7 +40,8 @@ public class TourGuide {
     }
     private Technique mTechnique;
     private View mHighlightedView;
-    private Activity mActivity;
+    private Context mContext;
+    private Window mWindow;
     private MotionType mMotionType;
     private FrameLayoutWithHole mFrameLayout;
     private View mToolTipViewGroup;
@@ -57,12 +59,13 @@ public class TourGuide {
 
     /* Static builder */
     public static TourGuide init(Activity activity){
-        return new TourGuide(activity);
+        return new TourGuide(activity, activity.getWindow());
     }
 
     /* Constructor */
-    public TourGuide(Activity activity){
-        mActivity = activity;
+    public TourGuide(Context context, Window window){
+        mContext = context;
+        mWindow = window;
     }
 
     /**
@@ -129,7 +132,7 @@ public class TourGuide {
      public void cleanUp(){
          mFrameLayout.cleanUp();
          if (mToolTipViewGroup!=null) {
-             ((ViewGroup) mActivity.getWindow().getDecorView()).removeView(mToolTipViewGroup);
+             ((ViewGroup) mWindow.getDecorView()).removeView(mToolTipViewGroup);
          }
     }
 
@@ -234,7 +237,7 @@ public class TourGuide {
                 mHighlightedView.getViewTreeObserver().removeGlobalOnLayoutListener(this);
 
                 /* Initialize a frame layout with a hole */
-                mFrameLayout = new FrameLayoutWithHole(mActivity, mHighlightedView, mMotionType, mOverlay);
+                mFrameLayout = new FrameLayoutWithHole(mContext, mHighlightedView, mMotionType, mOverlay);
                 /* handle click disable */
                 handleDisableClicking(mFrameLayout);
 
@@ -275,8 +278,8 @@ public class TourGuide {
 
         if (mToolTip != null) {
             /* inflate and get views */
-            ViewGroup parent = (ViewGroup) mActivity.getWindow().getDecorView();
-            LayoutInflater layoutInflater = mActivity.getLayoutInflater();
+            ViewGroup parent = (ViewGroup) mWindow.getDecorView();
+            LayoutInflater layoutInflater = LayoutInflater.from(mContext);
             mToolTipViewGroup = layoutInflater.inflate(R.layout.tooltip, null);
             View toolTipContainer = mToolTipViewGroup.findViewById(R.id.toolTip_container);
             TextView toolTipTitleTV = (TextView) mToolTipViewGroup.findViewById(R.id.title);
@@ -300,7 +303,7 @@ public class TourGuide {
 
             /* add setShadow if it's turned on */
             if (mToolTip.mShadow) {
-                mToolTipViewGroup.setBackgroundDrawable(mActivity.getResources().getDrawable(R.drawable.drop_shadow));
+                mToolTipViewGroup.setBackgroundDrawable(mContext.getResources().getDrawable(R.drawable.drop_shadow));
             }
 
             /* position and size calculation */
@@ -315,7 +318,7 @@ public class TourGuide {
             int toolTipMeasuredHeight = mToolTipViewGroup.getMeasuredHeight();
 
             Point resultPoint = new Point(); // this holds the final position of tooltip
-            float density = mActivity.getResources().getDisplayMetrics().density;
+            float density = mContext.getResources().getDisplayMetrics().density;
             final float adjustment = 10 * density; //adjustment is that little overlapping area of tooltip and targeted button
 
             // calculate x position, based on gravity, tooltipMeasuredWidth, parent max width, x position of target view, adjustment
@@ -408,13 +411,13 @@ public class TourGuide {
 
     private FloatingActionButton setupAndAddFABToFrameLayout(final FrameLayoutWithHole frameLayoutWithHole){
         // invisFab is invisible, and it's only used for getting the width and height
-        final FloatingActionButton invisFab = new FloatingActionButton(mActivity);
+        final FloatingActionButton invisFab = new FloatingActionButton(mContext);
         invisFab.setSize(FloatingActionButton.SIZE_MINI);
         invisFab.setVisibility(View.INVISIBLE);
-        ((ViewGroup)mActivity.getWindow().getDecorView()).addView(invisFab);
+        ((ViewGroup)mWindow.getDecorView()).addView(invisFab);
 
         // fab is the real fab that is going to be added
-        final FloatingActionButton fab = new FloatingActionButton(mActivity);
+        final FloatingActionButton fab = new FloatingActionButton(mContext);
         fab.setBackgroundColor(Color.BLUE);
         fab.setSize(FloatingActionButton.SIZE_MINI);
         fab.setColorNormal(mPointer.mColor);
@@ -442,7 +445,7 @@ public class TourGuide {
 
     private void setupFrameLayout(){
         FrameLayout.LayoutParams layoutParams = new FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT);
-        ViewGroup contentArea = (ViewGroup) mActivity.getWindow().getDecorView().findViewById(android.R.id.content);
+        ViewGroup contentArea = (ViewGroup) mWindow.getDecorView().findViewById(android.R.id.content);
         int [] pos = new int[2];
         contentArea.getLocationOnScreen(pos);
         // frameLayoutWithHole's coordinates are calculated taking full screen height into account
@@ -616,8 +619,8 @@ public class TourGuide {
         }
     }
     private int getScreenWidth(){
-        if (mActivity!=null) {
-            return mActivity.getResources().getDisplayMetrics().widthPixels;
+        if (mContext!=null) {
+            return mContext.getResources().getDisplayMetrics().widthPixels;
         } else {
             return 0;
         }

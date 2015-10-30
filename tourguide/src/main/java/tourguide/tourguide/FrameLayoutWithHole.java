@@ -2,6 +2,7 @@ package tourguide.tourguide;
 
 import android.animation.AnimatorSet;
 import android.app.Activity;
+import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
@@ -13,7 +14,6 @@ import android.support.v4.view.MotionEventCompat;
 import android.text.TextPaint;
 import android.util.AttributeSet;
 import android.util.Log;
-import android.view.Display;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
@@ -26,7 +26,7 @@ import java.util.ArrayList;
  */
 public class FrameLayoutWithHole extends FrameLayout {
     private TextPaint mTextPaint;
-    private Activity mActivity;
+    private Context mContext;
     private TourGuide.MotionType mMotionType;
     private Paint mEraser;
 
@@ -73,16 +73,16 @@ public class FrameLayoutWithHole extends FrameLayout {
         }
     }
 
-    public FrameLayoutWithHole(Activity context, View view) {
+    public FrameLayoutWithHole(Context context, View view) {
         this(context, view, TourGuide.MotionType.AllowAll);
     }
-    public FrameLayoutWithHole(Activity context, View view, TourGuide.MotionType motionType) {
+    public FrameLayoutWithHole(Context context, View view, TourGuide.MotionType motionType) {
         this(context, view, motionType, new Overlay());
     }
 
-    public FrameLayoutWithHole(Activity context, View view, TourGuide.MotionType motionType, Overlay overlay) {
+    public FrameLayoutWithHole(Context context, View view, TourGuide.MotionType motionType, Overlay overlay) {
         super(context);
-        mActivity = context;
+        mContext = context;
         mViewHole = view;
         init(null, 0);
         enforceMotionType();
@@ -116,8 +116,8 @@ public class FrameLayoutWithHole extends FrameLayout {
         mTextPaint.setTextAlign(Paint.Align.LEFT);
 
         Point size = new Point();
-        size.x = mActivity.getResources().getDisplayMetrics().widthPixels;
-        size.y = mActivity.getResources().getDisplayMetrics().heightPixels;
+        size.x = mContext.getResources().getDisplayMetrics().widthPixels;
+        size.y = mContext.getResources().getDisplayMetrics().heightPixels;
 
         mEraserBitmap = Bitmap.createBitmap(size.x, size.y, Bitmap.Config.ARGB_8888);
         mEraserCanvas = new Canvas(mEraserBitmap);
