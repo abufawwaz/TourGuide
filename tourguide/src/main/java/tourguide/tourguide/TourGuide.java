@@ -130,10 +130,11 @@ public class TourGuide {
      * Clean up the tutorial that is added to the activity
      */
      public void cleanUp(){
-         mFrameLayout.cleanUp();
-         if (mToolTipViewGroup!=null) {
+         if(mFrameLayout != null)
+            mFrameLayout.cleanUp();
+
+         if (mToolTipViewGroup != null && mWindow != null)
              ((ViewGroup) mWindow.getDecorView()).removeView(mToolTipViewGroup);
-         }
     }
 
     public TourGuide playLater(View view){
