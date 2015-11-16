@@ -8,6 +8,7 @@ import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.PorterDuff;
 import android.graphics.PorterDuffXfermode;
+import android.graphics.RectF;
 import android.text.TextPaint;
 import android.util.AttributeSet;
 import android.util.Log;
@@ -29,14 +30,12 @@ public class FrameLayoutWithHole extends FrameLayout {
 
     Bitmap mEraserBitmap;
     private Canvas mEraserCanvas;
-//    private Paint mPaint;
-//    private Paint transparentPaint;
     private View mViewHole; // This is the targeted view to be highlighted, where the hole should be placed
     private int mRadius;
     private int [] mPos = new int[2];
-    private float mDensity;
     private Overlay mOverlay;
     private boolean mCleanUpLock = false;
+    private RectF mRect;
 
     private ArrayList<AnimatorSet> mAnimatorSetArrayList;
 
@@ -87,14 +86,16 @@ public class FrameLayoutWithHole extends FrameLayout {
 
     public FrameLayoutWithHole(Context context, View view, TourGuide.MotionType motionType, Overlay overlay) {
         super(context);
-        init(null, 0);
-        setViewHole(view);
         mOverlay = overlay;
         mMotionType = motionType;
+        init(null, 0);
+        setViewHole(view);
     }
 
     private void init(AttributeSet attrs, int defStyle) {
         setWillNotDraw(false);
+
+        mRect = new RectF();
 
         // Set up a default TextPaint object
         mTextPaint = new TextPaint();
@@ -112,10 +113,21 @@ public class FrameLayoutWithHole extends FrameLayout {
         enforceMotionType();
         mViewHole.getLocationOnScreen(mPos);
 
-        mDensity = getContext().getResources().getDisplayMetrics().density;
-        int padding = (int)(20 * mDensity);
+        if(mOverlay != null) {
+            float density = getContext().getResources().getDisplayMetrics().density;
 
-        mRadius = Math.max(mViewHole.getWidth(), mViewHole.getHeight()) / 2 + padding;
+            if (mOverlay.mStyle == Overlay.Style.Rectangle) {
+                int padding = (int) (10 * density);
+                mRect.set(mPos[0] - padding, mPos[1] - padding, mPos[0] + mViewHole.getWidth() + padding, mPos[1] + mViewHole.getHeight() + padding);
+            } else {
+                int padding = (int) (20 * density);
+                float cX = mPos[0] + mViewHole.getWidth() / 2f;
+                float cY = mPos[1] + mViewHole.getHeight() / 2f;
+
+                mRadius = Math.max(mViewHole.getWidth(), mViewHole.getHeight()) / 2 + padding;
+                mRect.set(cX - mRadius, cY - mRadius, cX + mRadius, cY + mRadius);
+            }
+        }
     }
 
     protected void cleanUp(){
@@ -246,27 +258,23 @@ public class FrameLayoutWithHole extends FrameLayout {
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
-        mEraserBitmap.eraseColor(Color.TRANSPARENT);
 
-        if (mOverlay!=null) {
+        if (mOverlay != null) {
+            mEraserBitmap.eraseColor(Color.TRANSPARENT);
             mEraserCanvas.drawColor(mOverlay.mBackgroundColor);
-            int padding = (int) (10 * mDensity);
-            if (mOverlay.mStyle == Overlay.Style.Rectangle) {
-                mEraserCanvas.drawRect(mPos[0] - padding, mPos[1] - padding, mPos[0] + mViewHole.getWidth() + padding, mPos[1] + mViewHole.getHeight() + padding, mEraser);
-            } else {
-                mEraserCanvas.drawCircle(mPos[0] + mViewHole.getWidth() / 2, mPos[1] + mViewHole.getHeight() / 2, mRadius, mEraser);
-            }
+            if (mOverlay.mStyle == Overlay.Style.Rectangle)
+                mEraserCanvas.drawRect(mRect, mEraser);
+            else
+                mEraserCanvas.drawCircle(mRect.centerX(), mRect.centerY(), mRadius, mEraser);
+            canvas.drawBitmap(mEraserBitmap, 0, 0, null);
         }
-        canvas.drawBitmap(mEraserBitmap, 0, 0, null);
-
     }
 
     @Override
     protected void onAttachedToWindow() {
         super.onAttachedToWindow();
-        if (mOverlay!=null && mOverlay.mEnterAnimation!=null) {
+        if (mOverlay != null && mOverlay.mEnterAnimation != null)
             this.startAnimation(mOverlay.mEnterAnimation);
-        }
     }
 
 }
