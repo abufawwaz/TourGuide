@@ -8,7 +8,6 @@ import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.PorterDuff;
 import android.graphics.PorterDuffXfermode;
-import android.support.v4.view.MotionEventCompat;
 import android.text.TextPaint;
 import android.util.AttributeSet;
 import android.util.Log;
@@ -25,7 +24,6 @@ import java.util.ArrayList;
  */
 public class FrameLayoutWithHole extends FrameLayout {
     private TextPaint mTextPaint;
-    private Context mContext;
     private TourGuide.MotionType mMotionType;
     private Paint mEraser;
 
@@ -35,16 +33,12 @@ public class FrameLayoutWithHole extends FrameLayout {
 //    private Paint transparentPaint;
     private View mViewHole; // This is the targeted view to be highlighted, where the hole should be placed
     private int mRadius;
-    private int [] mPos;
+    private int [] mPos = new int[2];
     private float mDensity;
     private Overlay mOverlay;
+    private boolean mCleanUpLock = false;
 
     private ArrayList<AnimatorSet> mAnimatorSetArrayList;
-
-    public void setViewHole(View viewHole) {
-        this.mViewHole = viewHole;
-        enforceMotionType();
-    }
 
     public void addAnimatorSet(AnimatorSet animatorSet){
         if (mAnimatorSetArrayList==null){
@@ -57,7 +51,10 @@ public class FrameLayoutWithHole extends FrameLayout {
         if(TourGuide.DEBUG)
             Log.d(TourGuide.TAG, "enforceMotionType 1");
         
-        if (mViewHole!=null) {Log.d(TourGuide.TAG,"enforceMotionType 2");
+        if (mViewHole!=null) {
+            if(TourGuide.DEBUG)
+                Log.d(TourGuide.TAG,"enforceMotionType 2");
+
             if (mMotionType!=null && mMotionType == TourGuide.MotionType.ClickOnly) {
                 if(TourGuide.DEBUG) {
                     Log.d(TourGuide.TAG, "enforceMotionType 3");
@@ -90,52 +87,19 @@ public class FrameLayoutWithHole extends FrameLayout {
 
     public FrameLayoutWithHole(Context context, View view, TourGuide.MotionType motionType, Overlay overlay) {
         super(context);
-        mContext = context;
-        mViewHole = view;
         init(null, 0);
-        enforceMotionType();
+        setViewHole(view);
         mOverlay = overlay;
-
-        int [] pos = new int[2];
-        mViewHole.getLocationOnScreen(pos);
-        mPos = pos;
-
-        mDensity = context.getResources().getDisplayMetrics().density;
-        int padding = (int)(20 * mDensity);
-
-        if (mViewHole.getHeight() > mViewHole.getWidth()) {
-            mRadius = mViewHole.getHeight()/2 + padding;
-        } else {
-            mRadius = mViewHole.getWidth()/2 + padding;
-        }
         mMotionType = motionType;
     }
 
     private void init(AttributeSet attrs, int defStyle) {
-        // Load attributes
-//        final TypedArray a = getContext().obtainStyledAttributes(
-//                attrs, FrameLayoutWithHole, defStyle, 0);
-//
-//
-//        a.recycle();
         setWillNotDraw(false);
+
         // Set up a default TextPaint object
         mTextPaint = new TextPaint();
         mTextPaint.setFlags(Paint.ANTI_ALIAS_FLAG);
         mTextPaint.setTextAlign(Paint.Align.LEFT);
-
-//        Point size = new Point();
-//        size.x = mContext.getResources().getDisplayMetrics().widthPixels;
-//        size.y = mContext.getResources().getDisplayMetrics().heightPixels;
-
-//        mEraserBitmap = Bitmap.createBitmap(size.x, size.y, Bitmap.Config.ARGB_8888);
-//        mEraserCanvas = new Canvas(mEraserBitmap);
-
-//        mPaint = new Paint();
-//        mPaint.setColor(0xcc000000);
-//        transparentPaint = new Paint();
-//        transparentPaint.setColor(getResources().getColor(android.R.color.transparent));
-//        transparentPaint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.CLEAR));
 
         mEraser = new Paint();
         mEraser.setColor(0xFFFFFFFF);
@@ -143,7 +107,16 @@ public class FrameLayoutWithHole extends FrameLayout {
         mEraser.setFlags(Paint.ANTI_ALIAS_FLAG);
     }
 
-    private boolean mCleanUpLock = false;
+    public void setViewHole(View viewHole) {
+        mViewHole = viewHole;
+        enforceMotionType();
+        mViewHole.getLocationOnScreen(mPos);
+
+        mDensity = getContext().getResources().getDisplayMetrics().density;
+        int padding = (int)(20 * mDensity);
+
+        mRadius = Math.max(mViewHole.getWidth(), mViewHole.getHeight()) / 2 + padding;
+    }
 
     protected void cleanUp(){
         if (getParent() != null) {
@@ -243,22 +216,21 @@ public class FrameLayoutWithHole extends FrameLayout {
     public boolean dispatchTouchEvent(MotionEvent ev) {
         //first check if the location button should handle the touch event
         dumpEvent(ev);
-        int action = MotionEventCompat.getActionMasked(ev);
+//        int action = MotionEventCompat.getActionMasked(ev);
         if(mViewHole != null) {
-            int[] pos = new int[2];
-            mViewHole.getLocationOnScreen(pos);
+            mViewHole.getLocationOnScreen(mPos);
             if(TourGuide.DEBUG) {
                 Log.d(TourGuide.TAG, "[dispatchTouchEvent] mViewHole.getHeight(): " + mViewHole.getHeight());
                 Log.d(TourGuide.TAG, "[dispatchTouchEvent] mViewHole.getWidth(): " + mViewHole.getWidth());
                 Log.d(TourGuide.TAG, "[dispatchTouchEvent] Touch X(): " + ev.getRawX());
                 Log.d(TourGuide.TAG, "[dispatchTouchEvent] Touch Y(): " + ev.getRawY());
-                Log.d(TourGuide.TAG, "[dispatchTouchEvent] X lower bound: " + pos[0]);
-                Log.d(TourGuide.TAG, "[dispatchTouchEvent] X higher bound: " + (pos[0] + mViewHole.getWidth()));
-                Log.d(TourGuide.TAG, "[dispatchTouchEvent] Y lower bound: " + pos[1]);
-                Log.d(TourGuide.TAG, "[dispatchTouchEvent] Y higher bound: " + (pos[1] + mViewHole.getHeight()));
+                Log.d(TourGuide.TAG, "[dispatchTouchEvent] X lower bound: " + mPos[0]);
+                Log.d(TourGuide.TAG, "[dispatchTouchEvent] X higher bound: " + (mPos[0] + mViewHole.getWidth()));
+                Log.d(TourGuide.TAG, "[dispatchTouchEvent] Y lower bound: " + mPos[1]);
+                Log.d(TourGuide.TAG, "[dispatchTouchEvent] Y higher bound: " + (mPos[1] + mViewHole.getHeight()));
             }
 
-            if(ev.getRawY() >= pos[1] && ev.getRawY() <= (pos[1] + mViewHole.getHeight()) && ev.getRawX() >= pos[0] && ev.getRawX() <= (pos[0] + mViewHole.getWidth())) { //location button event
+            if(ev.getRawY() >= mPos[1] && ev.getRawY() <= (mPos[1] + mViewHole.getHeight()) && ev.getRawX() >= mPos[0] && ev.getRawX() <= (mPos[0] + mViewHole.getWidth())) { //location button event
                 
                 if(TourGuide.DEBUG) {
                     Log.d(TourGuide.TAG, "to the BOTTOM!");
