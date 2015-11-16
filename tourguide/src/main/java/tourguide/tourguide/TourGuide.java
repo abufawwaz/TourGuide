@@ -51,6 +51,9 @@ public class TourGuide {
 
     private Sequence mSequence;
 
+    public static final String TAG = TourGuide.class.getSimpleName();
+    public static boolean DEBUG = true;
+
     /*************
      *
      * Public API
