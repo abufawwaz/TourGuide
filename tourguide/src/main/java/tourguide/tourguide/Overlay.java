@@ -13,6 +13,7 @@ public class Overlay {
     public Style mStyle;
     public Animation mEnterAnimation, mExitAnimation;
     public View.OnClickListener mOnClickListener;
+    public int mPadding;
 
     public enum Style {
         Circle, Rectangle
@@ -49,6 +50,11 @@ public class Overlay {
 
     public Overlay setStyle(Style style){
         mStyle = style;
+        return this;
+    }
+
+    public Overlay setPadding(int padding){
+        mPadding = padding;
         return this;
     }
 

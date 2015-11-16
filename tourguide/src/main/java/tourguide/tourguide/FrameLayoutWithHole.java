@@ -2,14 +2,11 @@ package tourguide.tourguide;
 
 import android.animation.AnimatorSet;
 import android.content.Context;
-import android.graphics.Bitmap;
 import android.graphics.Canvas;
-import android.graphics.Color;
 import android.graphics.Paint;
-import android.graphics.PorterDuff;
-import android.graphics.PorterDuffXfermode;
+import android.graphics.RadialGradient;
 import android.graphics.RectF;
-import android.text.TextPaint;
+import android.graphics.Shader;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.MotionEvent;
@@ -24,24 +21,24 @@ import java.util.ArrayList;
  * TODO: document your custom view class.
  */
 public class FrameLayoutWithHole extends FrameLayout {
-    private TextPaint mTextPaint;
     private TourGuide.MotionType mMotionType;
-    private Paint mEraser;
-
-    Bitmap mEraserBitmap;
-    private Canvas mEraserCanvas;
-    private View mViewHole; // This is the targeted view to be highlighted, where the hole should be placed
-    private int mRadius;
-    private int [] mPos = new int[2];
     private Overlay mOverlay;
+    private View mViewHole; // This is the targeted view to be highlighted, where the hole should be placed
+
+    private int [] mPos = new int[2];
     private boolean mCleanUpLock = false;
     private RectF mRect;
 
     private ArrayList<AnimatorSet> mAnimatorSetArrayList;
 
+    private Paint mOverlayPaint;
+
+    private static final float[] GRADIENT_STOPS = new float[]{0f, 0.99f, 1f};
+    RadialGradient mOverlayShader;
+
     public void addAnimatorSet(AnimatorSet animatorSet){
         if (mAnimatorSetArrayList==null){
-            mAnimatorSetArrayList = new ArrayList<AnimatorSet>();
+            mAnimatorSetArrayList = new ArrayList<>();
         }
         mAnimatorSetArrayList.add(animatorSet);
     }
@@ -97,15 +94,8 @@ public class FrameLayoutWithHole extends FrameLayout {
 
         mRect = new RectF();
 
-        // Set up a default TextPaint object
-        mTextPaint = new TextPaint();
-        mTextPaint.setFlags(Paint.ANTI_ALIAS_FLAG);
-        mTextPaint.setTextAlign(Paint.Align.LEFT);
-
-        mEraser = new Paint();
-        mEraser.setColor(0xFFFFFFFF);
-        mEraser.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.CLEAR));
-        mEraser.setFlags(Paint.ANTI_ALIAS_FLAG);
+        mOverlayPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        mOverlayPaint.setStyle(Paint.Style.FILL);
     }
 
     public void setViewHole(View viewHole) {
@@ -117,15 +107,17 @@ public class FrameLayoutWithHole extends FrameLayout {
             float density = getContext().getResources().getDisplayMetrics().density;
 
             if (mOverlay.mStyle == Overlay.Style.Rectangle) {
-                int padding = (int) (10 * density);
+                int padding = mOverlay.mPadding > 0 ? mOverlay.mPadding : (int) (10 * density);
                 mRect.set(mPos[0] - padding, mPos[1] - padding, mPos[0] + mViewHole.getWidth() + padding, mPos[1] + mViewHole.getHeight() + padding);
+                mOverlayPaint.setColor(mOverlay.mBackgroundColor);
             } else {
-                int padding = (int) (20 * density);
+                int padding = mOverlay.mPadding > 0 ? mOverlay.mPadding : (int) (20 * density);
                 float cX = mPos[0] + mViewHole.getWidth() / 2f;
                 float cY = mPos[1] + mViewHole.getHeight() / 2f;
+                float radius = Math.max(mViewHole.getWidth(), mViewHole.getHeight()) / 2 + padding;
 
-                mRadius = Math.max(mViewHole.getWidth(), mViewHole.getHeight()) / 2 + padding;
-                mRect.set(cX - mRadius, cY - mRadius, cX + mRadius, cY + mRadius);
+                mOverlayPaint.setShader(mOverlayShader);
+                mOverlayShader = new RadialGradient(cX, cY, radius,new int[]{0x00000000, 0x00000000, mOverlay.mBackgroundColor}, GRADIENT_STOPS, Shader.TileMode.CLAMP);
             }
         }
     }
@@ -149,8 +141,14 @@ public class FrameLayoutWithHole extends FrameLayout {
                 Log.d(TourGuide.TAG,"Overlay exit animation listener is overwritten...");
             
             mOverlay.mExitAnimation.setAnimationListener(new Animation.AnimationListener() {
-                @Override public void onAnimationStart(Animation animation) {}
-                @Override public void onAnimationRepeat(Animation animation) {}
+                @Override
+                public void onAnimationStart(Animation animation) {
+                }
+
+                @Override
+                public void onAnimationRepeat(Animation animation) {
+                }
+
                 @Override
                 public void onAnimationEnd(Animation animation) {
                     ((ViewGroup) _pointerToFrameLayout.getParent()).removeView(_pointerToFrameLayout);
@@ -160,33 +158,12 @@ public class FrameLayoutWithHole extends FrameLayout {
         }
     }
 
-    @Override
-    protected void onSizeChanged(int w, int h, int oldw, int oldh) {
-        super.onSizeChanged(w, h, oldw, oldh);
-
-        if(mEraserBitmap != null){
-            mEraserBitmap.recycle();
-            mEraserBitmap = null;
-        }
-
-        mEraserBitmap = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888);
-        mEraserCanvas = new Canvas(mEraserBitmap);
-    }
-
     /* comment this whole method to cause a memory leak */
     @Override
     protected void onDetachedFromWindow() {
         super.onDetachedFromWindow();
+
         /* cleanup reference to prevent memory leak */
-
-        if(mEraserCanvas != null)
-            mEraserCanvas.setBitmap(null);
-
-        if(mEraserBitmap != null) {
-            mEraserBitmap.recycle();
-            mEraserBitmap = null;
-        }
-
         if (mAnimatorSetArrayList != null && mAnimatorSetArrayList.size() > 0){
             for(int i=0;i<mAnimatorSetArrayList.size();i++){
                 mAnimatorSetArrayList.get(i).end();
@@ -255,18 +232,35 @@ public class FrameLayoutWithHole extends FrameLayout {
         return super.dispatchTouchEvent(ev);
     }
 
+    private void drawOverlayRect(Canvas canvas){
+        int w = getWidth();
+        int h = getHeight();
+
+        float top = Math.max(mRect.top, 0);
+        float bottom = Math.min(mRect.bottom, h);
+
+        if(top > 0)
+            canvas.drawRect(0, 0, w, top, mOverlayPaint);
+
+        if(bottom < h)
+            canvas.drawRect(0, bottom, w, h, mOverlayPaint);
+
+        if(mRect.left > 0)
+            canvas.drawRect(0, top, mRect.left, bottom, mOverlayPaint);
+
+        if(mRect.right < w)
+            canvas.drawRect(mRect.right, top, w, bottom, mOverlayPaint);
+    }
+
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
 
-        if (mOverlay != null) {
-            mEraserBitmap.eraseColor(Color.TRANSPARENT);
-            mEraserCanvas.drawColor(mOverlay.mBackgroundColor);
+        if(mOverlay != null){
             if (mOverlay.mStyle == Overlay.Style.Rectangle)
-                mEraserCanvas.drawRect(mRect, mEraser);
+                drawOverlayRect(canvas);
             else
-                mEraserCanvas.drawCircle(mRect.centerX(), mRect.centerY(), mRadius, mEraser);
-            canvas.drawBitmap(mEraserBitmap, 0, 0, null);
+                canvas.drawRect(0, 0, getWidth(), getHeight(), mOverlayPaint);
         }
     }
 
