@@ -263,6 +263,7 @@ public class TourGuide {
     private void handleDisableClicking(FrameLayoutWithHole frameLayoutWithHole){
         // 1. if user provides an overlay listener, use that as 1st priority
         if (mOverlay != null && mOverlay.mOnClickListener!=null) {
+            frameLayoutWithHole.setViewHole(mHighlightedView);
             frameLayoutWithHole.setClickable(true);
             frameLayoutWithHole.setOnClickListener(mOverlay.mOnClickListener);
         }
