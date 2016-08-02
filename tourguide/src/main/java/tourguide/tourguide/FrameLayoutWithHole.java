@@ -44,18 +44,8 @@ public class FrameLayoutWithHole extends FrameLayout {
     }
 
     private void enforceMotionType(){
-        if(TourGuide.DEBUG)
-            Log.d(TourGuide.TAG, "enforceMotionType 1");
-        
         if (mViewHole!=null) {
-            if(TourGuide.DEBUG)
-                Log.d(TourGuide.TAG,"enforceMotionType 2");
-
             if (mMotionType!=null && mMotionType == TourGuide.MotionType.ClickOnly) {
-                if(TourGuide.DEBUG) {
-                    Log.d(TourGuide.TAG, "enforceMotionType 3");
-                    Log.d(TourGuide.TAG, "only Clicking");
-                }
                 mViewHole.setOnTouchListener(new OnTouchListener() {
                     @Override
                     public boolean onTouch(View view, MotionEvent motionEvent) {
@@ -64,10 +54,6 @@ public class FrameLayoutWithHole extends FrameLayout {
                     }
                 });
             } else if (mMotionType!=null && mMotionType == TourGuide.MotionType.SwipeOnly) {
-                if(TourGuide.DEBUG) {
-                    Log.d(TourGuide.TAG, "enforceMotionType 4");
-                    Log.d(TourGuide.TAG, "only Swiping");
-                }
                 mViewHole.setClickable(false);
             }
         }

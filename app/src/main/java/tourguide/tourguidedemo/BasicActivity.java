@@ -39,13 +39,9 @@ public class BasicActivity extends ActionBarActivity {
                 setDescription("Click on Get Started to begin...");
 
         // Setup pointer for demo
-        Pointer pointer = new Pointer();
-        if (color_demo) {
-            pointer.setColor(Color.RED);
-        }
-        if (gravity_demo) {
-            pointer.setGravity(Gravity.BOTTOM|Gravity.RIGHT);
-        }
+        int color = color_demo ? Color.RED : Color.WHITE;
+        int gravity = gravity_demo ? Gravity.BOTTOM | Gravity.RIGHT : Gravity.CENTER;
+        Pointer pointer = new Pointer(gravity, color);
 
         // the return handler is used to manipulate the cleanup of all the tutorial elements
         mTutorialHandler = TourGuide.init(this).with(TourGuide.Technique.Click)

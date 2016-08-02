@@ -6,8 +6,8 @@ import android.animation.ObjectAnimator;
 import android.animation.ValueAnimator;
 import android.app.Activity;
 import android.content.Context;
-import android.graphics.Color;
 import android.graphics.Point;
+import android.graphics.drawable.ColorDrawable;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.LayoutInflater;
@@ -19,7 +19,8 @@ import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
-import net.i2p.android.ext.floatingactionbutton.FloatingActionButton;
+import com.rey.material.util.ThemeUtil;
+import com.rey.material.util.ViewUtil;
 
 /**
  * Created by tanjunrong on 2/10/15.
@@ -208,12 +209,12 @@ public class TourGuide {
         int [] pos = new int[2];
         mHighlightedView.getLocationOnScreen(pos);
         int x = pos[0];
-        if((mPointer.mGravity & Gravity.RIGHT) == Gravity.RIGHT){
-            return x+mHighlightedView.getWidth()-width;
-        } else if ((mPointer.mGravity & Gravity.LEFT) == Gravity.LEFT) {
+        if((mPointer.gravity & Gravity.RIGHT) == Gravity.RIGHT){
+            return x + mHighlightedView.getWidth()-width;
+        } else if ((mPointer.gravity & Gravity.LEFT) == Gravity.LEFT) {
             return x;
         } else { // this is center
-            return x+mHighlightedView.getWidth()/2-width/2;
+            return x + mHighlightedView.getWidth() / 2 - width / 2;
         }
     }
     //TODO: move into Pointer
@@ -221,12 +222,12 @@ public class TourGuide {
         int [] pos = new int[2];
         mHighlightedView.getLocationInWindow(pos);
         int y = pos[1];
-        if((mPointer.mGravity & Gravity.BOTTOM) == Gravity.BOTTOM){
-            return y+mHighlightedView.getHeight()-height;
-        } else if ((mPointer.mGravity & Gravity.TOP) == Gravity.TOP) {
+        if((mPointer.gravity & Gravity.BOTTOM) == Gravity.BOTTOM){
+            return y + mHighlightedView.getHeight() - height;
+        } else if ((mPointer.gravity & Gravity.TOP) == Gravity.TOP) {
             return y;
         }else { // this is center
-            return y+mHighlightedView.getHeight()/2-height/2;
+            return y + mHighlightedView.getHeight() / 2 - height / 2;
         }
     }
 
@@ -247,7 +248,7 @@ public class TourGuide {
 
                 /* setup floating action button */
                 if (mPointer != null) {
-                    FloatingActionButton fab = setupAndAddFABToFrameLayout(mFrameLayout);
+                    View fab = setupAndAddFABToFrameLayout(mFrameLayout);
                     performAnimationOn(fab);
                 }
                 setupFrameLayout();
@@ -414,36 +415,25 @@ public class TourGuide {
         return y;
     }
 
-    private FloatingActionButton setupAndAddFABToFrameLayout(final FrameLayoutWithHole frameLayoutWithHole){
-        // invisFab is invisible, and it's only used for getting the width and height
-        final FloatingActionButton invisFab = new FloatingActionButton(mContext);
-        invisFab.setSize(FloatingActionButton.SIZE_MINI);
-        invisFab.setVisibility(View.INVISIBLE);
-        ((ViewGroup)mWindow.getDecorView()).addView(invisFab);
-
-        // fab is the real fab that is going to be added
-        final FloatingActionButton fab = new FloatingActionButton(mContext);
-        fab.setBackgroundColor(Color.BLUE);
-        fab.setSize(FloatingActionButton.SIZE_MINI);
-        fab.setColorNormal(mPointer.mColor);
-        fab.setStrokeVisible(false);
+    private View setupAndAddFABToFrameLayout(final FrameLayoutWithHole frameLayoutWithHole){
+        final com.rey.material.widget.FloatingActionButton fab = new com.rey.material.widget.FloatingActionButton(mContext);
+        final int radius = ThemeUtil.dpToPx(mContext, 20);
+        fab.setBackgroundColor(mPointer.color);
+        fab.setRadius(radius);
+        fab.setIcon(new ColorDrawable(0x00000000), false);
         fab.setClickable(false);
+        final FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        frameLayoutWithHole.addView(fab, params);
 
-        // When invisFab is layouted, it's width and height can be used to calculate the correct position of fab
-        final ViewTreeObserver viewTreeObserver = invisFab.getViewTreeObserver();
+        final ViewTreeObserver viewTreeObserver = fab.getViewTreeObserver();
         viewTreeObserver.addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
             @Override
             public void onGlobalLayout() {
                 // make sure this only run once
-                invisFab.getViewTreeObserver().removeGlobalOnLayoutListener(this);
-                final FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-                frameLayoutWithHole.addView(fab, params);
-
-                // measure size of image to be placed
-                params.setMargins(getXBasedOnGravity(invisFab.getWidth()), getYBasedOnGravity(invisFab.getHeight()), 0, 0);
+                fab.getViewTreeObserver().removeGlobalOnLayoutListener(this);
+                fab.updateLocation(getXBasedOnGravity(radius * 2), getYBasedOnGravity(radius * 2), Gravity.TOP|Gravity.LEFT);
             }
         });
-
 
         return fab;
     }

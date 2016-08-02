@@ -1,5 +1,12 @@
 apply plugin: 'com.android.library'
 
+repositories {
+    jcenter()
+    maven(){
+        url "https://oss.sonatype.org/content/repositories/snapshots"
+    }
+}
+
 Properties getGradleProperties(){
     def gradlePropsFile = file('../gradle.properties')
     def Properties gradleProps = new Properties()
@@ -38,7 +45,7 @@ android {
 dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
     compile 'com.android.support:appcompat-v7:23.0.1'
-    compile 'net.i2p.android.ext:floatingactionbutton:1.9.0'
+    compile 'com.github.rey5137:material:1.2.4'
 }
 
 apply from: 'https://raw.github.com/chrisbanes/gradle-mvn-push/master/gradle-mvn-push.gradle'
