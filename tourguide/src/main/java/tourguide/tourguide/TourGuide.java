@@ -20,7 +20,6 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import com.rey.material.util.ThemeUtil;
-import com.rey.material.util.ViewUtil;
 
 /**
  * Created by tanjunrong on 2/10/15.
@@ -287,9 +286,9 @@ public class TourGuide {
             ViewGroup parent = (ViewGroup) mWindow.getDecorView();
             LayoutInflater layoutInflater = LayoutInflater.from(mContext);
             mToolTipViewGroup = layoutInflater.inflate(R.layout.tooltip, null);
-            View toolTipContainer = mToolTipViewGroup.findViewById(R.id.toolTip_container);
-            TextView toolTipTitleTV = (TextView) mToolTipViewGroup.findViewById(R.id.title);
-            TextView toolTipDescriptionTV = (TextView) mToolTipViewGroup.findViewById(R.id.description);
+            View toolTipContainer = mToolTipViewGroup.findViewById(R.id.tourguide_ll_container);
+            TextView toolTipTitleTV = (TextView) mToolTipViewGroup.findViewById(R.id.tourguide_tv_title);
+            TextView toolTipDescriptionTV = (TextView) mToolTipViewGroup.findViewById(R.id.tourguide_tv_desc);
 
             /* set tooltip attributes */
             toolTipContainer.setBackgroundColor(mToolTip.mBackgroundColor);
