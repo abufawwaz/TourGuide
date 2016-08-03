@@ -285,7 +285,7 @@ public class TourGuide {
             /* inflate and get views */
             ViewGroup parent = (ViewGroup) mWindow.getDecorView();
             LayoutInflater layoutInflater = LayoutInflater.from(mContext);
-            mToolTipViewGroup = layoutInflater.inflate(R.layout.tooltip, null);
+            mToolTipViewGroup = layoutInflater.inflate(R.layout.tourguide_tooltip, null);
             View toolTipContainer = mToolTipViewGroup.findViewById(R.id.tourguide_ll_container);
             TextView toolTipTitleTV = (TextView) mToolTipViewGroup.findViewById(R.id.tourguide_tv_title);
             TextView toolTipDescriptionTV = (TextView) mToolTipViewGroup.findViewById(R.id.tourguide_tv_desc);
